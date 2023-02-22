@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "elm make src/Main.elm --optimize --output=build/main.js && cp index.html build/index.html"
   },
   "keywords": [],
   "author": "",
