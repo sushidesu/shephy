@@ -139,15 +139,20 @@ showCard card =
 
 cardToButton : Card -> String -> Html Msg
 cardToButton card text =
-    if card == Multiply then
-        Html.button
-            [ onClick UseMultiply
-            ]
-            [ Html.text text
-            ]
+    case card of
+        BeFruitful ->
+            Html.button
+                [ onClick UseBeFruitful
+                ]
+                [ Html.text text
+                ]
 
-    else
-        Html.text text
+        Multiply ->
+            Html.button
+                [ onClick UseMultiply
+                ]
+                [ Html.text text
+                ]
 
 
 sheepToString : Sheep -> String
@@ -248,6 +253,7 @@ type Msg
     | Init (List Card)
     | DrawFive
     | ToggleSelectSheep FieldId
+    | UseBeFruitful
     | UseMultiply
 
 
@@ -299,6 +305,50 @@ update msg model =
             , Cmd.none
             )
 
+        UseBeFruitful ->
+            let
+                selectedSheepIndexes =
+                    model.selectedSheep
+                        |> Dict.filter (\_ value -> value)
+                        |> Dict.keys
+
+                targetSheep =
+                    case selectedSheepIndexes of
+                        [ index ] ->
+                            Array.get index model.field
+                                |> Maybe.withDefault Nothing
+
+                        _ ->
+                            Nothing
+
+                updatedField =
+                    targetSheep
+                        |> Maybe.map
+                            (\target ->
+                                findLastNothing model.field
+                                    |> Maybe.map (\i -> Array.set i (Just target) model.field)
+                                    |> Maybe.withDefault model.field
+                            )
+                        |> Maybe.withDefault model.field
+
+                updatedSelectedSheep =
+                    case selectedSheepIndexes of
+                        [ index ] ->
+                            Dict.insert index False model.selectedSheep
+
+                        _ ->
+                            model.selectedSheep
+
+                updatedHands =
+                    case targetSheep of
+                        Just _ ->
+                            removeFirst BeFruitful model.hands
+
+                        Nothing ->
+                            model.hands
+            in
+            ( { model | field = updatedField, hands = updatedHands, selectedSheep = updatedSelectedSheep }, Cmd.none )
+
         UseMultiply ->
             let
                 updatedField =
@@ -310,6 +360,15 @@ update msg model =
                     removeFirst Multiply model.hands
             in
             ( { model | field = updatedField, hands = updatedHands }, Cmd.none )
+
+
+findFirstJust : Array (Maybe a) -> Maybe Int
+findFirstJust array =
+    array
+        |> Array.toIndexedList
+        |> List.filter (\( _, v ) -> v /= Nothing)
+        |> List.head
+        |> Maybe.map Tuple.first
 
 
 findLastNothing : Array (Maybe a) -> Maybe Int
