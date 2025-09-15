@@ -190,23 +190,22 @@ sheepToString sheep =
 
 showSheep : Maybe Sheep -> ( FieldId, Bool ) -> Html Msg
 showSheep maybeSheep ( index, selected ) =
-    case maybeSheep of
-        Just sheep ->
-            Html.div []
-                [ if selected then
-                    Html.button
-                        [ onClick (ToggleSelectSheep index) ]
-                        [ Html.text "◯" ]
+    Html.div []
+        [ Html.button
+            [ onClick <| ToggleSelectSheep index
+            ]
+            [ Html.text <|
+                if selected then
+                    "◯"
 
-                  else
-                    Html.button
-                        [ onClick (ToggleSelectSheep index) ]
-                        [ Html.text "☓" ]
-                , Html.text <| sheepToString sheep
-                ]
-
-        Nothing ->
-            Html.div [] [ Html.text "-" ]
+                else
+                    "☓"
+            ]
+        , maybeSheep
+            |> Maybe.map sheepToString
+            |> Maybe.withDefault "-"
+            |> Html.text
+        ]
 
 
 type Sheep
