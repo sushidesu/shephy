@@ -16,7 +16,7 @@ import Random.Set exposing (notInSet)
 type Card
     = BeFruitful
     | Multiply
-      -- | FillTheEarth
+    | FillTheEarth
     | Dominion
 
 
@@ -57,8 +57,9 @@ cardToString card =
         Multiply ->
             "増やせよ"
 
-        -- FillTheEarth ->
-        --     "地に満ちよ"
+        FillTheEarth ->
+            "地に満ちよ"
+
         Dominion ->
             "統率"
 
@@ -102,8 +103,7 @@ allCards =
     , BeFruitful
     , BeFruitful
     , Multiply
-
-    -- , FillTheEarth
+    , FillTheEarth
     , Dominion
 
     -- , Dominion
@@ -156,6 +156,11 @@ cardToButton card text =
                 ]
                 [ Html.text text
                 ]
+
+        FillTheEarth ->
+            Html.button
+                [ onClick UseFillTheEarth ]
+                [ Html.text text ]
 
         Dominion ->
             Html.button
@@ -267,6 +272,7 @@ type Msg
     | UseBeFruitful
     | UseMultiply
     | UseDominion
+    | UseFillTheEarth
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -371,6 +377,55 @@ update msg model =
                     removeFirst Multiply model.hands
             in
             ( { model | field = updatedField, hands = updatedHands }, Cmd.none )
+
+        UseFillTheEarth ->
+            let
+                targetSheep =
+                    List.map2
+                        (\maybeSheep ( index, selected ) -> ( maybeSheep, index, selected ))
+                        (Array.toList model.field)
+                        (Dict.toList model.selectedSheep)
+                        |> List.filter (\( _, _, selected ) -> selected)
+
+                isAllNothing =
+                    targetSheep
+                        |> List.all (\( maybeSheep, _, _ ) -> maybeSheep == Nothing)
+
+                targetIds =
+                    List.map (\( _, id, _ ) -> id) targetSheep
+
+                updatedField =
+                    if isAllNothing then
+                        model.field
+                            |> Array.toIndexedList
+                            |> List.map
+                                (\( id, maybeSheep ) ->
+                                    if List.member id targetIds then
+                                        Just One
+
+                                    else
+                                        maybeSheep
+                                )
+                            |> Array.fromList
+
+                    else
+                        model.field
+
+                updatedHands =
+                    if model.field /= updatedField then
+                        removeFirst FillTheEarth model.hands
+
+                    else
+                        model.hands
+
+                updatedSelected =
+                    if model.field /= updatedField then
+                        resetSelectedSheep model.selectedSheep
+
+                    else
+                        model.selectedSheep
+            in
+            ( { model | field = updatedField, hands = updatedHands, selectedSheep = updatedSelected }, Cmd.none )
 
         UseDominion ->
             let
