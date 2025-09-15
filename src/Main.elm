@@ -419,7 +419,7 @@ dominion target field =
         |> removeFirst (Just target)
         |> removeFirst (Just target)
         |> removeFirst (Just target)
-        |> List.append [ Just (levelUp target) ]
+        |> List.append [ Just (levelUp target), Nothing, Nothing ]
         |> Array.fromList
 
 
