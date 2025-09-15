@@ -285,7 +285,14 @@ update msg model =
             ( { model | count = model.count - 1 }, Cmd.none )
 
         Init deck ->
-            ( { model | deck = deck }
+            let
+                hands =
+                    List.take 5 deck
+
+                rest =
+                    List.drop 5 deck
+            in
+            ( { model | hands = hands, deck = rest }
             , Cmd.none
             )
 
