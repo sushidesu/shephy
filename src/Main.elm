@@ -7,6 +7,7 @@ import Html exposing (Html, select)
 import Html.Events exposing (onClick)
 import List exposing (map)
 import Random
+import Random.Char exposing (dominoTile)
 import Random.Extra exposing (maybe)
 import Random.List
 import Random.Set exposing (notInSet)
@@ -381,32 +382,12 @@ update msg model =
 
                 updatedField =
                     case selectedSheep of
-                        [ Just One, Just One, Just One ] ->
-                            model.field
-                                |> Array.toList
-                                |> removeFirst (Just One)
-                                |> removeFirst (Just One)
-                                |> removeFirst (Just One)
-                                |> List.append [ Just Three, Nothing, Nothing ]
-                                |> Array.fromList
+                        [ Just sheep1, Just sheep2, Just sheep3 ] ->
+                            if sheep1 == sheep2 && sheep2 == sheep3 then
+                                dominion sheep1 model.field
 
-                        [ Just Three, Just Three, Just Three ] ->
-                            model.field
-                                |> Array.toList
-                                |> removeFirst (Just Three)
-                                |> removeFirst (Just Three)
-                                |> removeFirst (Just Three)
-                                |> List.append [ Just Ten, Nothing, Nothing ]
-                                |> Array.fromList
-
-                        [ Just Ten, Just Ten, Just Ten ] ->
-                            model.field
-                                |> Array.toList
-                                |> removeFirst (Just Ten)
-                                |> removeFirst (Just Ten)
-                                |> removeFirst (Just Ten)
-                                |> List.append [ Just Thirty, Nothing, Nothing ]
-                                |> Array.fromList
+                            else
+                                model.field
 
                         _ ->
                             model.field
@@ -426,6 +407,42 @@ update msg model =
                         model.selectedSheep
             in
             ( { model | hands = updatedHands, field = updatedField, selectedSheep = updateSelectedSheep }, Cmd.none )
+
+
+dominion : Sheep -> Field -> Field
+dominion target field =
+    field
+        |> Array.toList
+        |> removeFirst (Just target)
+        |> removeFirst (Just target)
+        |> removeFirst (Just target)
+        |> List.append [ Just (levelUp target) ]
+        |> Array.fromList
+
+
+levelUp : Sheep -> Sheep
+levelUp sheep =
+    case sheep of
+        One ->
+            Three
+
+        Three ->
+            Ten
+
+        Ten ->
+            Thirty
+
+        Thirty ->
+            OneHundred
+
+        OneHundred ->
+            ThreeHundred
+
+        ThreeHundred ->
+            Thousand
+
+        Thousand ->
+            Thousand
 
 
 resetSelectedSheep : Dict a Bool -> Dict a Bool
