@@ -15,11 +15,11 @@ import Random.Set exposing (notInSet)
 type Card
     = BeFruitful
     | Multiply
+      -- | FillTheEarth
+    | Dominion
 
 
 
--- | FillTheEarth
--- | Dominion
 -- | Flourish
 -- | GoldenHooves
 -- | FallingRock
@@ -56,12 +56,13 @@ cardToString card =
         Multiply ->
             "増やせよ"
 
+        -- FillTheEarth ->
+        --     "地に満ちよ"
+        Dominion ->
+            "統率"
 
 
--- FillTheEarth ->
---     "地に満ちよ"
--- Dominion ->
---     "統率"
+
 -- Flourish ->
 --     "繁栄"
 -- GoldenHooves ->
@@ -102,7 +103,8 @@ allCards =
     , Multiply
 
     -- , FillTheEarth
-    -- , Dominion
+    , Dominion
+
     -- , Dominion
     -- , Flourish
     -- , GoldenHooves
@@ -153,6 +155,11 @@ cardToButton card text =
                 ]
                 [ Html.text text
                 ]
+
+        Dominion ->
+            Html.button
+                [ onClick UseDominion ]
+                [ Html.text text ]
 
 
 sheepToString : Sheep -> String
@@ -255,6 +262,7 @@ type Msg
     | ToggleSelectSheep FieldId
     | UseBeFruitful
     | UseMultiply
+    | UseDominion
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
@@ -332,12 +340,11 @@ update msg model =
                         |> Maybe.withDefault model.field
 
                 updatedSelectedSheep =
-                    case selectedSheepIndexes of
-                        [ index ] ->
-                            Dict.insert index False model.selectedSheep
+                    if model.field /= updatedField then
+                        resetSelectedSheep model.selectedSheep
 
-                        _ ->
-                            model.selectedSheep
+                    else
+                        model.selectedSheep
 
                 updatedHands =
                     case targetSheep of
@@ -360,6 +367,70 @@ update msg model =
                     removeFirst Multiply model.hands
             in
             ( { model | field = updatedField, hands = updatedHands }, Cmd.none )
+
+        UseDominion ->
+            let
+                selectedSheepIndexes =
+                    model.selectedSheep
+                        |> Dict.filter (\_ selected -> selected)
+                        |> Dict.keys
+
+                selectedSheep =
+                    selectedSheepIndexes
+                        |> List.map (\i -> Array.get i model.field |> Maybe.withDefault Nothing)
+
+                updatedField =
+                    case selectedSheep of
+                        [ Just One, Just One, Just One ] ->
+                            model.field
+                                |> Array.toList
+                                |> removeFirst (Just One)
+                                |> removeFirst (Just One)
+                                |> removeFirst (Just One)
+                                |> List.append [ Just Three, Nothing, Nothing ]
+                                |> Array.fromList
+
+                        [ Just Three, Just Three, Just Three ] ->
+                            model.field
+                                |> Array.toList
+                                |> removeFirst (Just Three)
+                                |> removeFirst (Just Three)
+                                |> removeFirst (Just Three)
+                                |> List.append [ Just Ten, Nothing, Nothing ]
+                                |> Array.fromList
+
+                        [ Just Ten, Just Ten, Just Ten ] ->
+                            model.field
+                                |> Array.toList
+                                |> removeFirst (Just Ten)
+                                |> removeFirst (Just Ten)
+                                |> removeFirst (Just Ten)
+                                |> List.append [ Just Thirty, Nothing, Nothing ]
+                                |> Array.fromList
+
+                        _ ->
+                            model.field
+
+                updatedHands =
+                    if model.field /= updatedField then
+                        removeFirst Dominion model.hands
+
+                    else
+                        model.hands
+
+                updateSelectedSheep =
+                    if model.field /= updatedField then
+                        resetSelectedSheep model.selectedSheep
+
+                    else
+                        model.selectedSheep
+            in
+            ( { model | hands = updatedHands, field = updatedField, selectedSheep = updateSelectedSheep }, Cmd.none )
+
+
+resetSelectedSheep : Dict a Bool -> Dict a Bool
+resetSelectedSheep dict =
+    Dict.map (\_ _ -> False) dict
 
 
 findFirstJust : Array (Maybe a) -> Maybe Int
