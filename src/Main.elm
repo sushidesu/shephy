@@ -188,8 +188,8 @@ sheepToString sheep =
             "1000"
 
 
-showSheep : Maybe Sheep -> Bool -> FieldId -> Html Msg
-showSheep maybeSheep selected index =
+showSheep : Maybe Sheep -> ( FieldId, Bool ) -> Html Msg
+showSheep maybeSheep ( index, selected ) =
     case maybeSheep of
         Just sheep ->
             Html.div []
@@ -223,6 +223,10 @@ type alias Field =
     Array (Maybe Sheep)
 
 
+type alias SelectedSheep =
+    Dict FieldId Bool
+
+
 type alias FieldId =
     Int
 
@@ -232,7 +236,7 @@ type alias Model =
     , field : Field
     , hands : List Card
     , deck : List Card
-    , selectedSheep : Dict FieldId Bool
+    , selectedSheep : SelectedSheep
     }
 
 
@@ -483,6 +487,17 @@ removeFirst item list =
                 x :: removeFirst item xs
 
 
+showField : Field -> SelectedSheep -> Html Msg
+showField field selectedSheep =
+    let
+        buttons =
+            List.map2 (\sheep ( index, selected ) -> showSheep sheep ( index, selected ))
+                (Array.toList field)
+                (Dict.toList selectedSheep)
+    in
+    Html.div [] buttons
+
+
 subscriptions : Model -> Sub Msg
 subscriptions _ =
     Sub.none
@@ -492,7 +507,7 @@ view : Model -> Html Msg
 view model =
     Html.div []
         [ Html.button [ onClick DrawFive ] [ Html.text "draw" ]
-        , Html.div [] (Array.toList (Array.indexedMap (\index sheep -> showSheep sheep (Dict.get index model.selectedSheep |> Maybe.withDefault False) index) model.field))
+        , showField model.field model.selectedSheep
         , Html.div [] (map showCard model.hands)
         ]
 
